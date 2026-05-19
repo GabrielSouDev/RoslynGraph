@@ -34,9 +34,10 @@ Análise incremental
 .NET 10
 
 Pacotes:
-Microsoft.CodeAnalysis.CSharp
-Microsoft.CodeAnalysis.CSharp.Workspaces
-Microsoft.CodeAnalysis.Workspaces.MSBuild
+
+- Microsoft.CodeAnalysis.CSharp
+- Microsoft.CodeAnalysis.CSharp.Workspaces
+- Microsoft.CodeAnalysis.Workspaces.MSBuild
 
 ## Uso básico
 
