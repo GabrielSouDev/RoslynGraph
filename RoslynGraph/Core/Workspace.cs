@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
+using RoslynGraph.Models.Graph.Edges;
 using RoslynGraph.Models.Graph.Nodes;
 using RoslynGraph.Utils;
 
@@ -14,7 +15,8 @@ public class Workspace
     public Solution? Solution { get; private set; }
     public IEnumerable<Project> Projects => Solution?.Projects ?? Enumerable.Empty<Project>();
     public Graph? Graph { get; set; }
-    //    public Dictionary<string, DeclarationNode>? Graph { get; set; }
+    public Dictionary<string, List<DeclarationNode>>? Nodes { get; set; }
+    public Dictionary<string, List<InvocationEdge>>? Edges { get; set; }
 
     public Workspace(string path)
     {
@@ -27,6 +29,8 @@ public class Workspace
     {
         Solution = await _workspace.OpenSolutionAsync(_path);
         Graph = await _jsonHandler.GetSemanticNodesAsync();
+        Nodes = Graph.Nodes.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.ToList());
+        Edges = Graph.Edges.GroupBy(x => x.IdCaller).ToDictionary(g => g.Key, g => g.ToList());
     }
 
     public async Task<Graph> GetSemanticNodesAsync()

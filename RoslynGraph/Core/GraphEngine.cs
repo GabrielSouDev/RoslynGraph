@@ -30,19 +30,26 @@ public class GraphEngine : IGraphEngine
     }
 
     //ALTERAR TUDO DO SEARCH
-    public async Task<DeclarationNode?> Search(string id)
+    public async Task<Graph?> Search(string id)
     {
         await EnsureInitialized();
 
         var decomposedId = id.Split('.');
         var LevelId = decomposedId.Count();
 
-        DeclarationNode? graph = null;
+        Graph graph = new();
         for (int i = LevelId; i >= 1; i--)
         {
-            //_workspace.Graph!.TryGetValue(string.Join(".", decomposedId[0..i]), out graph);
-            if (graph != null)
-                break;
+            _workspace.Nodes!.TryGetValue(string.Join(".", decomposedId[0..i]), out var nodes);
+            _workspace.Edges!.TryGetValue(string.Join(".", decomposedId[0..i]), out var edges);
+
+            if(nodes != null)
+                graph.Nodes = nodes;
+
+            if (edges != null)
+                graph.Edges = edges;
+
+            if (!graph.Nodes.Any() || !graph.Edges.Any()) break;
         }
 
         return graph;
