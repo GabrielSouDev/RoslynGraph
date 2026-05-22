@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 
 namespace RoslynGraph.Core;
+
 public class TreeModel
 {
     private readonly Document _document;

@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace RoslynGraph.Utils;
+
 public class JsonHandler
 {
     private readonly string _path;
@@ -20,22 +21,22 @@ public class JsonHandler
         _path = solutionPath.Replace(".slnx", "-graph.json");
     }
 
-    public async Task<List<DeclarationNode>> GetSemanticNodesAsync()
+    public async Task<Graph> GetSemanticNodesAsync()
     {
         if (!File.Exists(_path))
         {
             await File.WriteAllTextAsync(_path, "[]");
-            return new List<DeclarationNode>();
+            return new Graph();
         }
 
         var json = await File.ReadAllTextAsync(_path);
 
-        return JsonSerializer.Deserialize<List<DeclarationNode>>(json, _serializerOptions) ?? new();
+        return JsonSerializer.Deserialize<Graph>(json, _serializerOptions) ?? new Graph();
     }
 
-    public async Task UpdateSemanticNodesAsync(IEnumerable<DeclarationNode> semanticNodes)
+    public async Task UpdateSemanticNodesAsync(Graph graph)
     {
-        var json = JsonSerializer.Serialize(semanticNodes, _serializerOptions);
+        var json = JsonSerializer.Serialize(graph, _serializerOptions);
 
         await File.WriteAllTextAsync(_path, json);
     }

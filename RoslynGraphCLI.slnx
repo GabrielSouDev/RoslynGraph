@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="RoslynGraph.Plugins.SemanticGraph/RoslynGraph.Plugins.SemanticGraph.csproj" Id="dc74d512-1a2d-4b1e-b744-0de56004d007" />
   <Project Path="RoslynGraph/RoslynGraph.csproj" Id="c8da3337-845c-4c7c-8e96-63217749f25c" />
   <Project Path="RoslynGraphCLI/RoslynGraphCLI.csproj" />
 </Solution>

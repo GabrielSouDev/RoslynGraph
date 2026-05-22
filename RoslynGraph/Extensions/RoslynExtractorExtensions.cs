@@ -4,9 +4,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using RoslynGraph.Core;
 using RoslynGraph.Models.Enums;
 using RoslynGraph.Models.Graph.Nodes;
-using System.Xml.Linq;
 
 namespace RoslynGraph.Extensions;
+
 public static class RoslynExtractorExtensions
 {
     private static CategoryType Classify(INamedTypeSymbol symbol)
@@ -79,7 +79,7 @@ public static class RoslynExtractorExtensions
 
     public static string GetSymbolId(this ISymbol symbol)
     {
-        return symbol.ToDisplayString(SymbolFormat.Id); 
+        return symbol.ToDisplayString(SymbolFormat.Id);
     }
 
     public static CategoryType Classify(this TreeModel treeModel, TypeDeclarationSyntax typeDeclaration)
@@ -117,7 +117,7 @@ public static class RoslynExtractorExtensions
     {
         return symbol?.Name ?? string.Empty;
     }
-    
+
     public static ISymbol? GetSymbol(this TreeModel treeModel, SyntaxNode node)
     {
         return treeModel.SemanticModel!.GetDeclaredSymbol(node);
@@ -159,13 +159,13 @@ public static class RoslynExtractorExtensions
 
     public static bool InvocationIsExternal(this TreeModel treeModel, InvocationExpressionSyntax invocation)
     {
-        var symbolInfo = treeModel.SemanticModel.GetSymbolInfo(invocation);
-        var methodSymbol = symbolInfo.Symbol as IMethodSymbol;
+        var symbol = treeModel.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+        if (symbol == null)
+            return false;
 
-        var isFromSource = methodSymbol?.DeclaringSyntaxReferences.Length > 0;
-        var isAssemblyNameEqual = methodSymbol?.ContainingAssembly?.Name != treeModel.SemanticModel!.Compilation.Assembly.Name;
+        var currentAssembly = treeModel.SemanticModel!.Compilation.Assembly;
 
-        return (isFromSource && isAssemblyNameEqual) ? true : false;
+        return !SymbolEqualityComparer.Default.Equals(symbol.ContainingAssembly, currentAssembly);
     }
 }
 

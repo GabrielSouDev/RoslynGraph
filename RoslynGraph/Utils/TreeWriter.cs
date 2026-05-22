@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using RoslynGraph.Core;
 
 namespace RoslynGraph.Utils;
+
 public class TreeWriter
 {
     public static void PrintSolutionInfo(Solution solution)

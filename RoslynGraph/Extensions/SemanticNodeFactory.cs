@@ -3,40 +3,66 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using RoslynGraph.Core;
 using RoslynGraph.Models.Graph.Edges;
 using RoslynGraph.Models.Graph.Nodes;
-using System.Xml.Linq;
 
 namespace RoslynGraph.Extensions;
+
 public static class SemanticNodeFactory
 {
-    public static IEnumerable<DeclarationNode> Build(TreeModel treeModel)
+    public static Graph Build(TreeModel treeModel)
     {
-        var result = new List<DeclarationNode>();
-        var typeDeclarations = treeModel.GetTypeDeclarations();
-        foreach (var declaration in typeDeclarations)
-        {
-            var semanticNode = treeModel.BuildDeclarations(declaration);
+        var typeDeclarationsSyntax = treeModel.GetTypeDeclarations();
 
-            if (semanticNode == null)
-                continue;
+        var methodsSyntax = typeDeclarationsSyntax
+            .SelectMany(d => d.GetMethodsDeclaration());
 
-            result.Add(semanticNode);
-        }
+        var invocationExpressions = methodsSyntax
+            .SelectMany(m => m.GetInvocationsExpression());
+
+        var declarations = typeDeclarationsSyntax
+            .Select(treeModel.BuildDeclarations)
+            .Where(semanticNode => semanticNode != null)
+            .ToList();
+
+
+        var methods = methodsSyntax
+            .Select(treeModel.BuildMethod)
+            .Where((methodNode) => methodNode.Item1 != null);
+
+
+        var result = new Graph();
+        result.Nodes.AddRange(declarations!);
+        result.Nodes.AddRange(methods.Select(m => m.Item1)!);
+        result.Edges.AddRange(methods.SelectMany(m => m.Item2!)!);
+
         return result;
     }
 
-    public static IEnumerable<DeclarationNode> Build(TreeModel treeModel, SyntaxNode node)
+    public static Graph Build(TreeModel treeModel, SyntaxNode node)
     {
-        var result = new List<DeclarationNode>();
-        var typeDeclarations = node.GetTypeDeclarations();
-        foreach (var declaration in typeDeclarations)
-        {
-            var semanticNode = treeModel.BuildDeclarations(declaration);
+        var typeDeclarationsSyntax = node.GetTypeDeclarations();
 
-            if (semanticNode == null)
-                continue;
+        var methodsSyntax = typeDeclarationsSyntax
+            .SelectMany(d => d.GetMethodsDeclaration());
 
-            result.Add(semanticNode);
-        }
+        var invocationExpressions = methodsSyntax
+            .SelectMany(m => m.GetInvocationsExpression());
+
+        var declarations = typeDeclarationsSyntax
+            .Select(treeModel.BuildDeclarations)
+            .Where(semanticNode => semanticNode != null)
+            .ToList();
+
+
+        var methods = methodsSyntax
+            .Select(treeModel.BuildMethod)
+            .Where((methodNode) => methodNode.Item1 != null);
+
+
+        var result = new Graph();
+        result.Nodes.AddRange(declarations!);
+        result.Nodes.AddRange(methods.Select(m => m.Item1)!);
+        result.Edges.AddRange(methods.SelectMany(m => m.Item2!)!);
+
         return result;
     }
 
@@ -45,7 +71,7 @@ public static class SemanticNodeFactory
         var invocationId = treeModel.GetInvocationId(invocation);
         if (string.IsNullOrEmpty(invocationId))
             return null;
-        
+
         bool isExternal = treeModel.InvocationIsExternal(invocation);
 
         return new InvocationEdge()
@@ -56,13 +82,14 @@ public static class SemanticNodeFactory
         };
     }
 
-    private static MethodDeclarationNode? BuildMethod(this TreeModel treeModel, MethodDeclarationSyntax methodDeclaration)
+    private static (MethodDeclarationNode?, IEnumerable<InvocationEdge>?) BuildMethod(this TreeModel treeModel, MethodDeclarationSyntax methodDeclaration)
     {
+        Dictionary<string, MethodDeclarationNode> result = new();
         var methodSymbol = treeModel.GetSymbol(methodDeclaration);
-        if (methodSymbol == null) return null;
+        if (methodSymbol == null) return (null, null);
 
         var methodId = methodSymbol.GetSymbolId();
-        if (string.IsNullOrEmpty(methodId)) return null;
+        if (string.IsNullOrEmpty(methodId)) return (null, null);
 
         var body = methodDeclaration.GetMethodBody();
         var acessModifier = methodSymbol.GetAccessModifier();
@@ -80,6 +107,7 @@ public static class SemanticNodeFactory
             Body = body
         };
 
+        var invocationsEdges = new List<InvocationEdge>();
         var invocations = methodDeclaration.GetInvocationsExpression();
         foreach (var invocation in invocations)
         {
@@ -87,9 +115,9 @@ public static class SemanticNodeFactory
             if (invocationEdge == null)
                 continue;
 
-            methodNode.Invocations.Add(invocationEdge);
+            invocationsEdges.Add(invocationEdge);
         }
-        return methodNode;
+        return (methodNode, invocationsEdges);
     }
 
     private static TypeDeclarationNode? BuildDeclarations(this TreeModel treeModel, TypeDeclarationSyntax declaration)
@@ -120,15 +148,6 @@ public static class SemanticNodeFactory
         semanticNode.AccessModifier = acessModifier;
         semanticNode.Name = name;
 
-        var methodsDeclarations = declaration.GetMethodsDeclaration();
-        foreach (var methodDeclaration in methodsDeclarations)
-        {
-            var methodNode = treeModel.BuildMethod(methodDeclaration);
-            if (methodNode == null)
-                continue;
-
-            semanticNode.Methods.Add(methodNode);
-        }
         return semanticNode;
     }
 }

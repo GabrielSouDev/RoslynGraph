@@ -4,6 +4,7 @@ using RoslynGraph.Models.Graph.Nodes;
 using RoslynGraph.Utils;
 
 namespace RoslynGraph.Core;
+
 public class Workspace
 {
     private readonly MSBuildWorkspace _workspace;
@@ -12,8 +13,8 @@ public class Workspace
 
     public Solution? Solution { get; private set; }
     public IEnumerable<Project> Projects => Solution?.Projects ?? Enumerable.Empty<Project>();
-    public IEnumerable<DeclarationNode>? SemanticNodes { get; set; }
-    public Dictionary<string, DeclarationNode>? Graph { get; set; }
+    public Graph? Graph { get; set; }
+    //    public Dictionary<string, DeclarationNode>? Graph { get; set; }
 
     public Workspace(string path)
     {
@@ -25,21 +26,18 @@ public class Workspace
     public async Task Initialize()
     {
         Solution = await _workspace.OpenSolutionAsync(_path);
-        SemanticNodes = await _jsonHandler.GetSemanticNodesAsync();
-        Graph = SemanticNodes
-            .GroupBy(x => x.Id)
-            .ToDictionary(g => g.Key, g => g.First());
+        Graph = await _jsonHandler.GetSemanticNodesAsync();
     }
 
-    public async Task<List<DeclarationNode>> GetSemanticNodesAsync()
+    public async Task<Graph> GetSemanticNodesAsync()
     {
         return await _jsonHandler.GetSemanticNodesAsync();
     }
 
-    public async Task UpdateSemanticNodesAsync(IEnumerable<DeclarationNode> nodes)
+    public async Task UpdateSemanticNodesAsync(Graph graph)
     {
-        await _jsonHandler.UpdateSemanticNodesAsync(nodes);
-        SemanticNodes = nodes;
+        await _jsonHandler.UpdateSemanticNodesAsync(graph);
+        Graph = graph;
 
     }
 }

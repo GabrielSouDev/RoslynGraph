@@ -1,9 +1,9 @@
 ﻿using Microsoft.CodeAnalysis;
 using RoslynGraph.Models.Enums;
-using RoslynGraph.Models.Graph.Edges;
 using System.Text.Json.Serialization;
 
 namespace RoslynGraph.Models.Graph.Nodes;
+
 public interface IDeclarationNode
 {
     string Id { get; }
@@ -30,9 +30,8 @@ public abstract class TypeDeclarationNode : DeclarationNode
 
     public Accessibility AccessModifier { get; set; }
 
+    //mover para SemanticGraphNode
     public CategoryType Category { get; set; } = CategoryType.Unknown;
-
-    public List<MethodDeclarationNode> Methods { get; set; } = new();
 }
 
 public class ClassDeclarationNode : TypeDeclarationNode { }
@@ -54,6 +53,4 @@ public class MethodDeclarationNode : DeclarationNode
     public IEnumerable<ParameterDeclarationNode> Parameters { get; set; } = new List<ParameterDeclarationNode>();
 
     public string? Body { get; set; }
-
-    public List<InvocationEdge> Invocations { get; set; } = new();
 }

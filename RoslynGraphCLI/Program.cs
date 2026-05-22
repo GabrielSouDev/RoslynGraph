@@ -1,4 +1,5 @@
 ﻿using RoslynGraph.Core;
+using RoslynGraph.Interfaces;
 using RoslynGraph.Utils;
 
 var pathArg = args.FirstOrDefault(a => a.StartsWith("-p=") || a.StartsWith("--path="));
@@ -15,7 +16,7 @@ Console.WriteLine("║ search         → buscar no grafo     ║");
 Console.WriteLine("║ exit           → sair                ║");
 Console.WriteLine("╚══════════════════════════════════════╝");
 
-var graphEngine = new GraphEngine(solutionPath);
+IGraphEngine graphEngine = new GraphEngine(solutionPath);
 var input = string.Empty;
 do
 {

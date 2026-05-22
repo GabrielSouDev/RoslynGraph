@@ -1,11 +1,13 @@
 ﻿using RoslynGraph.Extensions;
+using RoslynGraph.Interfaces;
 using RoslynGraph.Models.Graph.Nodes;
 using RoslynGraph.Utils;
 
 namespace RoslynGraph.Core;
-public class GraphEngine
+
+public class GraphEngine : IGraphEngine
 {
-    private readonly Workspace _workspace;
+    protected readonly Workspace _workspace;
     private bool _isInitialized = false;
 
     public GraphEngine(string path)
@@ -13,7 +15,7 @@ public class GraphEngine
         _workspace = new Workspace(path);
     }
 
-    private async Task Initialize()
+    protected virtual async Task InitializeAsync()
     {
         await _workspace.Initialize();
         _isInitialized = true;
@@ -22,11 +24,12 @@ public class GraphEngine
     private async Task EnsureInitialized()
     {
         if (!_isInitialized)
-            await Initialize();
+            await InitializeAsync();
 
         var a = await _workspace.Projects.ToList()[0].GetCompilationAsync();
     }
 
+    //ALTERAR TUDO DO SEARCH
     public async Task<DeclarationNode?> Search(string id)
     {
         await EnsureInitialized();
@@ -37,7 +40,7 @@ public class GraphEngine
         DeclarationNode? graph = null;
         for (int i = LevelId; i >= 1; i--)
         {
-            _workspace.Graph!.TryGetValue(string.Join(".", decomposedId[0..i]), out graph);
+            //_workspace.Graph!.TryGetValue(string.Join(".", decomposedId[0..i]), out graph);
             if (graph != null)
                 break;
         }
@@ -70,7 +73,7 @@ public class GraphEngine
         }
     }
 
-    public async Task<IEnumerable<DeclarationNode>> FullScan()
+    public async Task<Graph> FullScan()
     {
         await EnsureInitialized();
 
@@ -86,12 +89,14 @@ public class GraphEngine
 
         var results = await Task.WhenAll(tasks);
 
-        var semanticNodes = results
-            .SelectMany(x => x)
-            .ToList();
+        var graph = new Graph
+        {
+            Nodes = results.SelectMany(g => g.Nodes).ToList(),
+            Edges = results.SelectMany(g => g.Edges).ToList()
+        };
 
-        await _workspace.UpdateSemanticNodesAsync(semanticNodes);
+        await _workspace.UpdateSemanticNodesAsync(graph);
 
-        return semanticNodes;
+        return graph;
     }
 }
