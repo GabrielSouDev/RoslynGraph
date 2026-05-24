@@ -1,14 +1,6 @@
 ﻿namespace RoslynGraph.Models.Graph.Edges;
 
-public interface IEdge
-{
-    public string IdStart { get; set; } 
-    public string IdEnd { get; set; } 
-    public bool IsExternal { get; set; }
-}
-
-
-public class InvocationEdge : IEdge
+public class SemanticInvocationEdge : IEdge
 {
     public string IdStart { get; set; } = string.Empty;
     public string IdEnd { get; set; } = string.Empty;

@@ -1,5 +1,7 @@
 ﻿using RoslynGraph.Core;
 using RoslynGraph.Interfaces;
+using RoslynGraph.Models.Graph.Edges;
+using RoslynGraph.Models.Graph.Nodes;
 using RoslynGraph.Utils;
 
 var pathArg = args.FirstOrDefault(a => a.StartsWith("-p=") || a.StartsWith("--path="));
@@ -34,7 +36,7 @@ do
             input = Console.ReadLine();
 
             if (!string.IsNullOrEmpty(input))
-                result = await graphEngine.Search(input);
+                result = await graphEngine.SearchInGraph(input);
             break;
         case "":
             if (Console.CursorTop > 0)
@@ -48,5 +50,5 @@ do
     }
 
     if(result != null)
-        JsonHandler.PrintJson(result);
+        JsonHandler<Graph, DeclarationNode, InvocationEdge>.PrintJson(result);
 } while (input != null && input.ToLower() != "exit");

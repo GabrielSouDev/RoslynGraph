@@ -6,7 +6,7 @@ using RoslynGraph.Models.Graph.Nodes;
 
 namespace RoslynGraph.Extensions;
 
-public static class SemanticNodeFactory
+public static class GraphFactory
 {
     public static Graph Build(TreeModel treeModel)
     {
@@ -76,8 +76,8 @@ public static class SemanticNodeFactory
 
         return new InvocationEdge()
         {
-            IdCaller = methodId,
-            IdCalled = invocationId,
+            IdStart = methodId,
+            IdEnd = invocationId,
             IsExternal = isExternal
         };
     }

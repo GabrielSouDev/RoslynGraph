@@ -4,25 +4,19 @@ using System.Text.Json.Serialization;
 
 namespace RoslynGraph.Models.Graph.Nodes;
 
-public interface INode
-{
-    string Id { get; }
-    Guid IdStable { get; }
-}
-
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "nodeType")]
-[JsonDerivedType(typeof(ClassDeclarationNode), "class")]
-[JsonDerivedType(typeof(InterfaceDeclarationNode), "interface")]
-[JsonDerivedType(typeof(MethodDeclarationNode), "method")]
-[JsonDerivedType(typeof(RecordDeclarationNode), "record")]
-[JsonDerivedType(typeof(StructDeclarationNode), "struct")]
-public class DeclarationNode : INode
+[JsonDerivedType(typeof(SemanticClassDeclarationNode), "semantic-class")]
+[JsonDerivedType(typeof(SemanticInterfaceDeclarationNode), "semantic-interface")]
+[JsonDerivedType(typeof(SemanticMethodDeclarationNode), "semantic-method")]
+[JsonDerivedType(typeof(SemanticRecordDeclarationNode), "semantic-record")]
+[JsonDerivedType(typeof(SemanticStructDeclarationNode), "semantic-struct")]
+public class SemanticDeclarationNode : INode
 {
     public string Id { get; set; } = string.Empty;
     public Guid IdStable { get; init; } = Guid.NewGuid();
 }
 
-public abstract class TypeDeclarationNode : DeclarationNode
+public abstract class SemanticTypeDeclarationNode : DeclarationNode
 {
     public string Name { get; set; } = string.Empty;
 
@@ -32,15 +26,15 @@ public abstract class TypeDeclarationNode : DeclarationNode
     public CategoryType Category { get; set; } = CategoryType.Unknown;
 }
 
-public class ClassDeclarationNode : TypeDeclarationNode { }
+public class SemanticClassDeclarationNode : TypeDeclarationNode { }
 
-public class InterfaceDeclarationNode : TypeDeclarationNode { }
+public class SemanticInterfaceDeclarationNode : TypeDeclarationNode { }
 
-public class RecordDeclarationNode : TypeDeclarationNode { }
+public class SemanticRecordDeclarationNode : TypeDeclarationNode { }
 
-public class StructDeclarationNode : TypeDeclarationNode { }
+public class SemanticStructDeclarationNode : TypeDeclarationNode { }
 
-public class MethodDeclarationNode : DeclarationNode
+public class SemanticMethodDeclarationNode : DeclarationNode
 {
     public string Name { get; set; } = string.Empty;
 

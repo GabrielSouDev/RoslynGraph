@@ -1,5 +1,8 @@
-﻿using RoslynGraph.Extensions;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.MSBuild;
+using RoslynGraph.Extensions;
 using RoslynGraph.Interfaces;
+using RoslynGraph.Models.Graph.Edges;
 using RoslynGraph.Models.Graph.Nodes;
 using RoslynGraph.Utils;
 
@@ -7,17 +10,21 @@ namespace RoslynGraph.Core;
 
 public class GraphEngine : IGraphEngine
 {
-    protected readonly Workspace _workspace;
+    private readonly GraphWorkspace<Graph, DeclarationNode, InvocationEdge> _workspace;
+    private Solution? _solution { get; set; }
+    private readonly string _path;
     private bool _isInitialized = false;
 
     public GraphEngine(string path)
     {
-        _workspace = new Workspace(path);
+        _path = path;
+        _workspace = new GraphWorkspace<Graph, DeclarationNode, InvocationEdge>(path);
     }
 
-    protected virtual async Task InitializeAsync()
+    protected virtual async Task InitializeAsync()  
     {
-        await _workspace.Initialize();
+        using var workspace = MSBuildWorkspace.Create();
+        _solution = await workspace.OpenSolutionAsync(_path);
         _isInitialized = true;
     }
 
@@ -26,30 +33,23 @@ public class GraphEngine : IGraphEngine
         if (!_isInitialized)
             await InitializeAsync();
 
-        var a = await _workspace.Projects.ToList()[0].GetCompilationAsync();
+        var a = await _solution!.Projects.ToList()[0].GetCompilationAsync();
     }
 
-    //ALTERAR TUDO DO SEARCH
-    public async Task<Graph?> Search(string id)
+    public virtual async Task<Graph?> SearchInGraph(string id)
     {
         await EnsureInitialized();
 
         var decomposedId = id.Split('.');
         var LevelId = decomposedId.Count();
 
-        Graph graph = new();
+        Graph? graph = new();
         for (int i = LevelId; i >= 1; i--)
         {
-            _workspace.Nodes!.TryGetValue(string.Join(".", decomposedId[0..i]), out var nodes);
-            _workspace.Edges!.TryGetValue(string.Join(".", decomposedId[0..i]), out var edges);
+            var actualId = string.Join(".", decomposedId[0..i]);
+            graph = _workspace.GetById(actualId);
 
-            if(nodes != null)
-                graph.Nodes = nodes;
-
-            if (edges != null)
-                graph.Edges = edges;
-
-            if (!graph.Nodes.Any() || !graph.Edges.Any()) break;
+            if (graph != null && (!graph.Nodes.Any() || !graph.Edges.Any())) break;
         }
 
         return graph;
@@ -60,7 +60,7 @@ public class GraphEngine : IGraphEngine
     {
         await EnsureInitialized();
 
-        foreach (var project in _workspace.Projects!)
+        foreach (var project in _solution!.Projects!)
         {
             var compilation = await project.GetCompilationAsync();
             if (compilation == null) continue;
@@ -75,8 +75,8 @@ public class GraphEngine : IGraphEngine
             await treeModel.LoadAsync();
 
             //demo
-            var semanticNode = SemanticNodeFactory.Build(treeModel, node);
-            JsonHandler.PrintJson(semanticNode);
+            var semanticNode = GraphFactory.Build(treeModel, node);
+            JsonHandler<Graph, DeclarationNode, InvocationEdge>.PrintJson(semanticNode);
         }
     }
 
@@ -84,14 +84,14 @@ public class GraphEngine : IGraphEngine
     {
         await EnsureInitialized();
 
-        if (_workspace.Projects == null) throw new ArgumentException("Workspace sem projetos carregados.");
+        if (_solution!.Projects == null) throw new ArgumentException("Workspace sem projetos carregados.");
 
-        var tasks = _workspace.Projects.SelectMany(p => p.Documents).Select(async document =>
+        var tasks = _solution.Projects.SelectMany(p => p.Documents).Select(async document =>
         {
             var treeModel = new TreeModel(document);
             await treeModel.LoadAsync();
 
-            return SemanticNodeFactory.Build(treeModel);
+            return GraphFactory.Build(treeModel);
         });
 
         var results = await Task.WhenAll(tasks);

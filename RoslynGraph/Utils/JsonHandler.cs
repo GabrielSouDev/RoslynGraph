@@ -1,10 +1,14 @@
-﻿using RoslynGraph.Models.Graph.Nodes;
+﻿using RoslynGraph.Models.Graph.Edges;
+using RoslynGraph.Models.Graph.Nodes;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace RoslynGraph.Utils;
 
-public class JsonHandler
+public class JsonHandler<TGraph, TNode, TEdge>
+    where TGraph : IGraph<TNode, TEdge>, new()
+    where TNode : INode, new()
+    where TEdge : IEdge, new()
 {
     private readonly string _path;
     private static readonly JsonSerializerOptions _serializerOptions = new JsonSerializerOptions
@@ -18,23 +22,23 @@ public class JsonHandler
 
     public JsonHandler(string solutionPath)
     {
-        _path = solutionPath.Replace(".slnx", "-graph.json");
+        _path = solutionPath.Replace(".slnx", $"-{typeof(TGraph).Name.ToLower()}.json");
     }
 
-    public async Task<Graph> GetSemanticNodesAsync()
+    public async Task<TGraph> GetSemanticNodesAsync()
     {
         if (!File.Exists(_path))
         {
             await File.WriteAllTextAsync(_path, "[]");
-            return new Graph();
+            return new TGraph();
         }
 
         var json = await File.ReadAllTextAsync(_path);
 
-        return JsonSerializer.Deserialize<Graph>(json, _serializerOptions) ?? new Graph();
+        return JsonSerializer.Deserialize<TGraph>(json, _serializerOptions) ?? new TGraph();
     }
 
-    public async Task UpdateSemanticNodesAsync(Graph graph)
+    public async Task UpdateSemanticNodesAsync(TGraph graph)
     {
         var json = JsonSerializer.Serialize(graph, _serializerOptions);
 
